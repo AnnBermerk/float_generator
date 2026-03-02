@@ -27,25 +27,26 @@ static int hex_value(char c) { // Преобразует один hex-симво
 static void bytes_to_hex(const unsigned char *bytes, size_t size, char *out) {  // Перевод массива байт в hex-строку
     static const char *H = "0123456789ABCDEF"; // Таблица hex-символов
     for (size_t i = 0; i < size; i++) { // Проходим по каждому байту
-        unsigned char b = bytes[size - 1 - i]; // берем байты с конца, чтобы получить представление "от старших бит к младшим"
-        out[2*i] = H[(b >> 4) & 0xF]; // Старшие 4 бита -> hex-символ
-        out[2*i + 1] = H[b & 0xF]; // Младшие 4 бита -> hex-символ
+        unsigned char b = bytes[size - 1 - i]; // Берем байты с конца, чтобы вывести число в привычном порядке "от старших байт к младшим"
+        unsigned char hi = (unsigned char)(b / 16); // Старшая тетрада (старшие 4 бита)
+        unsigned char lo = (unsigned char)(b % 16); // Младшая тетрада (младшие 4 бита) 
+        out[2*i] = H[hi]; // В позицию 2*i записываем символ, соответствующий старшей тетраде
+        out[2*i + 1] = H[lo]; // В позицию 2*i+1 записываем символ, соответствующий младшей тетраде
     }
     out[2*size] = '\0'; // Завершаем строку нулевым символом
 }
 
 // Строка hex -> байты
 static int hex_to_bytes(const char *hex, unsigned char *out_bytes, size_t size) { // Обратное преобразование
-    size_t need = 2 * size; // Сколько символов hex должно быть
-    size_t len = strlen(hex); // Фактическая длина строки
-    if (len != need) return 1; // Если длина не совпадает — ошибка
+    size_t need = 2 * size; // Сколько символов hex должно быть (на каждый байт приходится 2 hex-символа)
+    if (strlen(hex) != need) return 1; // Если длина не совпадает — ошибка
 
     for (size_t i = 0; i < size; i++) { // По каждому байту
         int hi = hex_value(hex[2*i]); // Старшая hex-цифра
         int lo = hex_value(hex[2*i + 1]); // Младшая hex-цифра
         if (hi < 0 || lo < 0) return 2; // Если символ некорректный — ошибка
 
-        unsigned char b = (unsigned char)((hi << 4) | lo); // Склеиваем два полубайта в один байт
+        unsigned char b = (unsigned char)(hi * 16 + lo); // Восстанавливаем исходный байт: ст. тетрада *16 + мл. тетрада
         out_bytes[size - 1 - i] = b; // Кладём в обратном порядке (т.е. как привыкли: big-endian)
     }
     return 0; // Ура
@@ -87,6 +88,7 @@ int to_machine(int bits, long double x, char *out_hex, size_t out_hex_size) {  /
     return 20; // Неверное значение bits(
 }
 
+// = Перевод из машинного представление =
 int from_machine(int bits, const char *hex, long double *x_back) { // Обратное преобразование
     if (!x_back) return 30; // Проверка указателя
 
