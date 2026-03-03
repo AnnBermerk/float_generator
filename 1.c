@@ -11,8 +11,6 @@
 #include <time.h> // time() — генерация seed
 #include <math.h> // powl, roundl, fabsl, isfinite
 #include <ctype.h> // toupper
-#include <float.h>
-
 
 // = 1) HEX помогаторы ^*^ =
 
